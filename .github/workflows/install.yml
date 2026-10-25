@@ -57,12 +57,6 @@ jobs:
           skip=$(sed -e 's/#.*//' .github/cask-skip.txt | xargs)
           echo "HOMEBREW_BUNDLE_CASK_SKIP=${skip}" >> "$GITHUB_ENV"
 
-      # A new Mac has no Firefox; the runner image's copy, installed outside Homebrew,
-      # makes `brew install --cask firefox` refuse to overwrite it.
-      - name: Remove apps the runner image preinstalls outside Homebrew
-        if: runner.os == 'macOS'
-        run: sudo rm -rf /Applications/Firefox.app
-
       # The image bakes in Homebrew metadata from its build date, which can expect a checksum
       # upstream has since replaced. A new Mac starts from fresh metadata, so CI should too.
       - name: Refresh Homebrew metadata
