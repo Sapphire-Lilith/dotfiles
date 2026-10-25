@@ -62,8 +62,12 @@ jobs:
         if: runner.os == 'macOS'
         run: sudo rm -rf /Applications/Firefox.app
 
-      # Same entry point as the README, so the unpinned latest chezmoi is what a new machine gets.
-      # Run from $HOME like a fresh terminal: the installer writes to .local/bin relative to it.
+      # The image bakes in Homebrew metadata from its build date, which can expect a checksum
+      # upstream has since replaced. A new Mac starts from fresh metadata, so CI should too.
+      - name: Refresh Homebrew metadata
+        if: runner.os == 'macOS'
+        run: brew update
+
       # The runner image fills most of its disk with toolchains a fresh Ubuntu machine does not
       # have (.NET, Android SDK, GHC, CodeQL); the full install no longer fits beside them.
       - name: Free disk space the runner image uses for preinstalled toolchains
@@ -85,6 +89,8 @@ jobs:
           echo "$files" | xargs sudo sed -i 's#azure\.archive\.ubuntu\.com#archive.ubuntu.com#g'
           echo "Switched: $files"
 
+      # Same entry point as the README, so the unpinned latest chezmoi is what a new machine gets.
+      # Run from $HOME like a fresh terminal: the installer writes to .local/bin relative to it.
       # A stalled package mirror trickles data forever instead of timing out, so cap the step
       # well above the slowest normal run (about 10 minutes on macOS).
       - name: Install through the README entry point
@@ -177,26 +183,20 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Judge each cask against current metadata, not the copy baked into the runner image.
+      - name: Refresh Homebrew metadata
+        run: brew update
+
       # A checksum mismatch, or any other download failure, means the skip is still needed.
-      # Upstreams have served the expected file once and a mismatching one on the next run,
-      # so a cask counts as fixed only after several fresh downloads in a row succeed.
       - name: Re-try skipped casks
         id: fetch
         run: |
-          attempts=3
           fixed=""
           while IFS= read -r line; do
             cask=$(printf '%s' "$line" | sed -e 's/#.*//' | xargs)
             [ -n "$cask" ] || continue
-            ok=1
-            for _ in $(seq "$attempts"); do
-              # --force discards the cached download; brew must not read the loop's stdin.
-              if ! brew fetch --force --cask "$cask" < /dev/null; then
-                ok=0
-                break
-              fi
-            done
-            if [ "$ok" = 1 ]; then
+            # brew must not read the loop's stdin, which is the skip list itself.
+            if brew fetch --cask "$cask" < /dev/null; then
               fixed="$fixed $cask"
             else
               echo "::notice::$cask still fails to download; keeping the skip."
@@ -228,7 +228,7 @@ jobs:
           git commit -am "👷 ci: stop skipping casks that download again"
           git push --force origin "$branch"
           body=$(cat <<EOF
-          \`brew fetch --force --cask\` succeeded three times in a row for: ${FIXED}
+          After \`brew update\`, \`brew fetch --cask\` succeeds for: ${FIXED}
 
           This drops them from \`.github/cask-skip.txt\`. Approve the CI runs on this pull request,
           then merge; the install workflow re-runs on main with these casks included.
