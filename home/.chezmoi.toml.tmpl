@@ -9,6 +9,14 @@
 {{- if not (regexMatch "^[^@[:space:]]+@[^@[:space:]]+$" $email) -}}
 {{-   fail (printf "email %q is not an address: rerun `chezmoi init --prompt --promptString email=<addr>`" $email) -}}
 {{- end -}}
+{{- /* full adds CAD, 3D printing and embedded tooling; minimal leaves those out.
+       --promptChoice accepts any value without checking it against the list. */ -}}
+{{- $profiles := list "full" "minimal" -}}
+{{- $profile := promptChoiceOnce . "profile" "profile" $profiles "full" -}}
+{{- if not (has $profile $profiles) -}}
+{{-   fail (printf "profile %q is not one of full, minimal: rerun `chezmoi init --prompt --promptChoice profile=minimal`" $profile) -}}
+{{- end -}}
 [data]
     name = {{ $name | quote }}
     email = {{ $email | quote }}
+    profile = {{ $profile | quote }}

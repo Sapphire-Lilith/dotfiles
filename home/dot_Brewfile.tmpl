@@ -1,7 +1,43 @@
 tap "arto-app/tap"
-tap "espressif/eim"
 # Powerful descriptive vector graphics language
 brew "asymptote"
+# Cryptography and SSL/TLS Toolkit
+brew "openssl@3"
+# SSL/TLS VPN implementing OSI layer 2 or 3 secure network extension
+brew "openvpn"
+# Presenter console with multi-monitor support for PDF files
+brew "pdfpc"
+# Password manager that keeps all passwords secure behind one password
+cask "1password"
+# The Art of Reading Markdown.
+cask "arto-app/tap/arto", trusted: true
+# Anthropic's official Claude AI desktop app
+cask "claude"
+# Voice and text chat software
+cask "discord"
+# Web browser
+cask "firefox"
+cask "font-plemol-jp"
+cask "font-plemol-jp-hs"
+cask "font-plemol-jp-nf"
+# Blocks all Keyboard and TouchBar input
+cask "keyboardcleantool"
+# Replacement for Docker Desktop
+cask "orbstack"
+# Team communication and collaboration software
+cask "slack"
+# Customizable email client
+cask "thunderbird"
+# GPU-accelerated cross-platform terminal emulator and multiplexer
+cask "wezterm"
+# Multiplayer code editor
+cask "zed"
+# Video communication and virtual meeting platform
+cask "zoom"
+{{- if eq .profile "full" }}
+
+# --- full profile only: CAD, 3D printing and embedded development (several GB) ---
+tap "espressif/eim"
 # Object-file caching compiler wrapper
 brew "ccache"
 # Cross-platform make
@@ -14,48 +50,16 @@ brew "dfu-util"
 brew "pkgconf"
 # Small build system for use with gyp or CMake
 brew "ninja"
-# Cryptography and SSL/TLS Toolkit
-brew "openssl@3"
-# SSL/TLS VPN implementing OSI layer 2 or 3 secure network extension
-brew "openvpn"
-# Presenter console with multi-monitor support for PDF files
-brew "pdfpc"
 # ESP-IDF Installation Manager - CLI tool for setting up ESP-IDF development environment
 brew "espressif/eim/eim", trusted: true
-# Password manager that keeps all passwords secure behind one password
-cask "1password"
-# The Art of Reading Markdown.
-cask "arto-app/tap/arto", trusted: true
 # Integrated CAD, CAM, CAE, and PCB software
 cask "autodesk-fusion"
 # 3D model slicing software for 3D printers, maintained by Bambu Lab
 cask "bambu-studio"
-# Anthropic's official Claude AI desktop app
-cask "claude"
-# Voice and text chat software
-cask "discord"
-# Web browser
-cask "firefox"
-cask "font-plemol-jp"
-cask "font-plemol-jp-hs"
-cask "font-plemol-jp-nf"
 # Pre-built GNU bare-metal toolchain for 32-bit Arm processors
 cask "gcc-arm-embedded"
-# Blocks all Keyboard and TouchBar input
-cask "keyboardcleantool"
 # Electronics design automation suite
 cask "kicad"
-# Replacement for Docker Desktop
-cask "orbstack"
 # Imaging utility to install operating systems to a microSD card
 cask "raspberry-pi-imager"
-# Team communication and collaboration software
-cask "slack"
-# Customizable email client
-cask "thunderbird"
-# GPU-accelerated cross-platform terminal emulator and multiplexer
-cask "wezterm"
-# Multiplayer code editor
-cask "zed"
-# Video communication and virtual meeting platform
-cask "zoom"
+{{- end }}

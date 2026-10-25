@@ -20,14 +20,25 @@ xcode-select --install
 sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --apply Sapphire-Lilith
 ```
 
+You are asked for `name`, `email` and `profile`:
+
+- `full` (default): everything, including CAD, 3D printing and embedded development tools
+  (Autodesk Fusion, KiCad, Bambu Studio, ESP-IDF and Arm toolchains), which take several GB.
+- `minimal`: the same setup without those.
+
 Without interactive prompts:
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --apply \
-  --promptString name=<user.name> --promptString email=<user.email> Sapphire-Lilith
+  --promptString name=<user.name> --promptString email=<user.email> \
+  --promptChoice profile=minimal Sapphire-Lilith
 ```
 
 > replace `<user.name>` & `<user.email>` with your GitHub username and email address.
+
+To switch the profile later, run `chezmoi init --prompt --promptChoice profile=full` and then
+`chezmoi apply`. Switching to `minimal` stops installing the extra tools but does not remove
+ones already installed.
 
 ### Japanese input (Ubuntu)
 
