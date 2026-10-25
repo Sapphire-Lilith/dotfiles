@@ -1,0 +1,17 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+set -euo pipefail
+
+{{ template "apt.sh" . }}
+# Snap apps (Discord, Slack) cannot reach ibus or fcitx5's own protocol from their sandbox,
+# but desktop-legacy allows the fcitx4 D-Bus API that fcitx5 still serves.
+# The IM environment variables live in ~/.config/environment.d/90-fcitx5.conf.
+apt_update
+apt_install language-selector-common
+# check-language-support prints one package per word.
+# shellcheck disable=SC2046
+apt_install $(check-language-support -l ja) im-config fcitx5 fcitx5-mozc fcitx5-config-qt
+
+# Writes ~/.xinputrc, from which im-launch starts fcitx5 at login.
+im-config -n fcitx5
+{{ end -}}

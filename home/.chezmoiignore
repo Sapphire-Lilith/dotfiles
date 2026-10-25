@@ -1,0 +1,13 @@
+.config/sheldon/sheldon.zsh
+.config/sheldon/completions/_*
+
+.config/zed/*
+!.config/zed/*.json
+
+{{ if ne .chezmoi.os "darwin" }}
+.Brewfile
+{{ end }}
+
+{{ if ne .chezmoi.os "linux" }}
+.config/environment.d
+{{ end }}

@@ -1,0 +1,6 @@
+{{- if not (and (hasKey . "email") .email) -}}
+{{-   fail "data.email is not set: run `chezmoi init` to supply it" -}}
+{{- end -}}
+[user]
+	name = {{ .name }}
+	email = {{ .email }}

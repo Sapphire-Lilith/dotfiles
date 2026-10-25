@@ -1,0 +1,127 @@
+format = """
+[\ue0b2](#7f7fff)\
+$username\
+[\ue0b0](bg:#7fbfff fg:#7f7fff)\
+$directory\
+[\ue0b0](fg:#7fbfff bg:#7fffff)\
+$git_branch\
+$git_status\
+[\ue0b0](fg:#7fffff bg:#7fffbf)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[\ue0b0](fg:#7fffbf bg:#7fff7f)\
+$docker_context\
+[\ue0b0](fg:#7fff7f bg:#bfff7f)\
+$time\
+[\ue0b0 ](fg:#bfff7f)\
+\n$character"""
+
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[character]
+success_symbol = "[\uf054](#ff0000)[\uf054](#ffd400)[\uf054](#00ff00)"
+error_symbol = "[\uf054](#ff0000)[\uf054](#ff0000)[\uf054](#ff0000)"
+
+# You can also replace your username with a neat symbol like \uf120 to save some space
+[username]
+show_always = true
+style_user = "bg:#7f7fff fg:#000000"
+style_root = "bg:#7f7fff fg:#000000"
+format = '[ $user ]($style)'
+
+[directory]
+style = "bg:#7fbfff fg:#000000"
+format = "[ $path ]($style)"
+truncation_length = 128
+truncation_symbol = "…/"
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "\uf718 "
+"Downloads" = "\uf019 "
+"Music" = "\uf001 "
+"Pictures" = "\uf03e "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = " \uf718\uf12a "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important \uf718 " = " \uf718\uf12a "
+
+[c]
+symbol = "\ue61e "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[docker_context]
+symbol = "\uf308 "
+style = "bg:#7fff7f fg:#000000"
+format = '[[ $symbol $context ](bg:#7fff7f fg:#000000)]($style) $path'
+
+[elixir]
+symbol = "\ue275 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[elm]
+symbol = "\ue62c "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[git_branch]
+symbol = "\uf418 "
+style = "bg:#7fffff fg:#000000"
+format = '[[ $symbol $branch ](bg:#7fffff fg:#000000)]($style)'
+
+[git_status]
+style = "bg:#7fffff fg:#000000"
+format = '[[($all_status$ahead_behind )](bg:#7fffff fg:#000000)]($style)'
+
+[golang]
+symbol = "\ue627 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[haskell]
+symbol = "\ue777 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[java]
+symbol = "\ue256 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[julia]
+symbol = "\ue624 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[nodejs]
+symbol = "\ue718 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[nim]
+symbol = "\uf6a4 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[rust]
+symbol = "\ue7a8 "
+style = "bg:#7fffbf fg:#000000"
+format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
+
+[time]
+style = "bg:#bfff7f fg:#000000"
+time_format = "%R" # Hour:Minute Format
+format = '\uf651[[ $time ](bg:#bfff7f fg:#000000)]($style)'

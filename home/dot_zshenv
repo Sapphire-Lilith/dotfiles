@@ -1,0 +1,6 @@
+export PATH="$HOME/.local/bin:$PATH"
+eval "$(mise activate zsh --shims)"
+
+# Ubuntu's /etc/zsh/zshrc runs compinit before sheldon's load.zsh does; skip it so
+# completion initialises once. It must be set here, before /etc/zsh/zshrc is read.
+skip_global_compinit=1

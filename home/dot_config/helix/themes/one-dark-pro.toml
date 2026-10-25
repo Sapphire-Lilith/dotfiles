@@ -1,0 +1,106 @@
+# One Dark Pro theme for Helix
+# Based on the popular One Dark Pro theme
+
+"attribute" = "yellow"
+"keyword" = { fg = "purple", modifiers = ["italic"] }
+"keyword.directive" = "purple"
+"namespace" = "yellow"
+"punctuation" = "fg"
+"punctuation.delimiter" = "fg"
+"operator" = "cyan"
+"special" = "blue"
+"variable.other.member" = "red"
+"variable" = "red"
+"variable.builtin" = "yellow"
+"variable.parameter" = "red"
+"type" = "yellow"
+"type.builtin" = "yellow"
+"constructor" = "blue"
+"function" = "blue"
+"function.macro" = "purple"
+"function.builtin" = "cyan"
+"tag" = "red"
+"comment" = { fg = "comment", modifiers = ["italic"] }
+"constant" = "orange"
+"constant.builtin" = "orange"
+"string" = "green"
+"constant.numeric" = "orange"
+"constant.character.escape" = "cyan"
+"label" = "purple"
+"module" = "yellow"
+
+"diff.plus" = "green"
+"diff.delta" = "yellow"
+"diff.minus" = "red"
+
+"diagnostic.info".underline = { color = "blue", style = "curl" }
+"diagnostic.hint".underline = { color = "green", style = "curl" }
+"diagnostic.warning".underline = { color = "yellow", style = "curl" }
+"diagnostic.error".underline = { color = "red", style = "curl" }
+"info" = { fg = "blue", modifiers = ["bold"] }
+"hint" = { fg = "green", modifiers = ["bold"] }
+"warning" = { fg = "yellow", modifiers = ["bold"] }
+"error" = { fg = "red", modifiers = ["bold"] }
+
+"ui.background" = { bg = "bg" }
+"ui.virtual" = "gray"
+"ui.virtual.ruler" = { bg = "gray_dark" }
+"ui.virtual.whitespace" = "gray"
+"ui.virtual.indent-guide" = "gray_dark"
+
+"ui.cursor" = { bg = "gray", fg = "bg" }
+"ui.cursor.primary" = { bg = "white", fg = "bg" }
+"ui.cursor.match" = { fg = "blue", modifiers = ["underlined"] }
+"ui.selection" = { bg = "selection" }
+"ui.cursorline.primary" = { bg = "cursorline" }
+
+"ui.linenr" = "linenr"
+"ui.linenr.selected" = "fg"
+
+"ui.statusline" = { fg = "fg", bg = "statusline" }
+"ui.statusline.inactive" = { fg = "gray", bg = "statusline" }
+"ui.statusline.normal" = { fg = "bg", bg = "blue", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "bg", bg = "green", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "bg", bg = "purple", modifiers = ["bold"] }
+
+"ui.text" = "fg"
+"ui.text.focus" = { fg = "white", bg = "selection", modifiers = ["bold"] }
+
+"ui.help" = { fg = "fg", bg = "gray_dark" }
+"ui.popup" = { fg = "fg", bg = "gray_dark" }
+"ui.window" = "gray"
+"ui.menu" = { fg = "fg", bg = "gray_dark" }
+"ui.menu.selected" = { fg = "white", bg = "blue" }
+
+"markup.heading" = "blue"
+"markup.list" = "red"
+"markup.bold" = { fg = "yellow", modifiers = ["bold"] }
+"markup.italic" = { fg = "purple", modifiers = ["italic"] }
+"markup.strikethrough" = { modifiers = ["crossed_out"] }
+"markup.link.url" = { fg = "cyan", modifiers = ["underlined"] }
+"markup.link.text" = "purple"
+"markup.quote" = "yellow"
+"markup.raw" = "green"
+
+[palette]
+# One Dark Pro colors
+bg = "#282c34"
+fg = "#abb2bf"
+white = "#ffffff"
+
+red = "#e06c75"
+green = "#98c379"
+yellow = "#e5c07b"
+blue = "#61afef"
+purple = "#c678dd"
+cyan = "#56b6c2"
+orange = "#d19a66"
+
+# UI colors
+gray = "#5c6370"
+gray_dark = "#2c313c"
+linenr = "#4b5263"
+selection = "#3e4451"
+cursorline = "#2c313c"
+statusline = "#21252b"
+comment = "#5c6370"

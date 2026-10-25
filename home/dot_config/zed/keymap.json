@@ -1,0 +1,7 @@
+[
+  { "context": "Workspace", "bindings": { "cmd-r": "agent::Toggle" } },
+  {
+    "context": "Terminal",
+    "bindings": { "shift-enter": ["terminal::SendText", "\u001b\r"] },
+  },
+]

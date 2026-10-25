@@ -1,0 +1,14 @@
+{{- /* Personal data is supplied at init time and never committed.
+       Each prompt text equals its data key because --promptString matches
+       on prompt text: `chezmoi init --promptString email=...`. */ -}}
+{{- $name := promptStringOnce . "name" "name" -}}
+{{- $email := promptStringOnce . "email" "email" -}}
+{{- if not $name -}}
+{{-   fail "name is empty: rerun `chezmoi init --prompt --promptString name=<name>`" -}}
+{{- end -}}
+{{- if not (regexMatch "^[^@[:space:]]+@[^@[:space:]]+$" $email) -}}
+{{-   fail (printf "email %q is not an address: rerun `chezmoi init --prompt --promptString email=<addr>`" $email) -}}
+{{- end -}}
+[data]
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}

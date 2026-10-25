@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Workflows reference actions by major tag, so only new majors need a PR.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "👷 ci"
+      include: scope

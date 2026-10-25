@@ -1,0 +1,238 @@
+name: install
+
+on:
+  schedule:
+    - cron: "0 18 * * 0" # Monday 03:00 JST
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "home/.chezmoiscripts/**"
+      - "home/.chezmoi.toml.tmpl"
+      - "home/.chezmoiignore"
+      - "home/dot_Brewfile"
+      - "home/dot_config/environment.d/**"
+      - "home/dot_config/mise/**"
+      - "home/dot_config/sheldon/**"
+      - "home/dot_zshrc"
+      - "home/dot_zshenv"
+      - "home/dot_zprofile.tmpl"
+      - ".github/workflows/install.yml"
+      - ".github/cask-skip.txt"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: install-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    env:
+      # Raises mise's GitHub API rate limit; the token is read-only for this repo.
+      MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NONINTERACTIVE: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Installing the commit under test, not the published main, keeps pull requests honest.
+      - name: Place the checkout where chezmoi expects its source
+        run: |
+          mkdir -p ~/.local/share
+          cp -R "$GITHUB_WORKSPACE" ~/.local/share/chezmoi
+
+      # brew bundle reads this for both install and check; casks broken upstream are listed there.
+      - name: Skip casks listed as broken upstream
+        run: |
+          skip=$(sed -e 's/#.*//' .github/cask-skip.txt | xargs)
+          echo "HOMEBREW_BUNDLE_CASK_SKIP=${skip}" >> "$GITHUB_ENV"
+
+      # A new Mac has no Firefox; the runner image's copy, installed outside Homebrew,
+      # makes `brew install --cask firefox` refuse to overwrite it.
+      - name: Remove apps the runner image preinstalls outside Homebrew
+        if: runner.os == 'macOS'
+        run: sudo rm -rf /Applications/Firefox.app
+
+      # Same entry point as the README, so the unpinned latest chezmoi is what a new machine gets.
+      # Run from $HOME like a fresh terminal: the installer writes to .local/bin relative to it.
+      # The runner image fills most of its disk with toolchains a fresh Ubuntu machine does not
+      # have (.NET, Android SDK, GHC, CodeQL); the full install no longer fits beside them.
+      - name: Free disk space the runner image uses for preinstalled toolchains
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      # Every Ubuntu mirror serves identical, signature-checked packages; the runner's Azure mirror
+      # has repeatedly stalled mid-download on large ones such as fonts-noto-cjk.
+      - name: Fetch Ubuntu packages from the main archive
+        if: runner.os == 'Linux'
+        run: |
+          files=$(grep -rlE 'azure\.archive\.ubuntu\.com' /etc/apt/ || true)
+          if [ -z "$files" ]; then
+            echo "::warning::No apt source points at the Azure mirror; nothing to switch."
+            exit 0
+          fi
+          echo "$files" | xargs sudo sed -i 's#azure\.archive\.ubuntu\.com#archive.ubuntu.com#g'
+          echo "Switched: $files"
+
+      # A stalled package mirror trickles data forever instead of timing out, so cap the step
+      # well above the slowest normal run (about 10 minutes on macOS).
+      - name: Install through the README entry point
+        timeout-minutes: 30
+        run: |
+          cd "$HOME"
+          sh -c "$(curl -fsLS --retry 3 --max-time 60 get.chezmoi.io/lb)" -- \
+            init --apply --no-tty --promptString name=ci,email=ci@example.com
+
+      # Every check below runs even if an earlier one failed, so one run reports them all.
+      - name: Every target matches the source
+        if: ${{ !cancelled() }}
+        run: ~/.local/bin/chezmoi verify
+
+      - name: Every package is installed
+        if: ${{ !cancelled() }}
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          missing="$(mise ls --missing)"
+          if [ -n "$missing" ]; then
+            echo "mise tools missing:" >&2
+            echo "$missing" >&2
+            exit 1
+          fi
+          if [ "$RUNNER_OS" = macOS ]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+            brew bundle check --global
+          fi
+
+      # The runner image leaves zsh's system completion directories group/world-writable,
+      # which a stock Ubuntu install does not; restore that so compinit does not prompt.
+      - name: Tighten directories the runner image leaves writable
+        if: ${{ !cancelled() && runner.os == 'Linux' }}
+        run: |
+          zsh -lic 'autoload -Uz compaudit; compaudit' 2>/dev/null | grep '^/' | sort -u \
+            | xargs -r sudo chmod g-w,o-w
+
+      # The first login lets sheldon clone its plugins; only the second must be silent.
+      # Failures are also raised as annotations, which the public API exposes unlike job logs.
+      - name: Login shell starts without errors
+        if: ${{ !cancelled() }}
+        run: |
+          annotate() {
+            awk -v title="$1" 'BEGIN { printf "::error title=%s::", title }
+              { gsub(/%/, "%25"); gsub(/\r/, "%0D"); printf "%s%%0A", $0 }
+              END { print "" }'
+          }
+          zsh -lic exit
+          zsh -lic exit 2> "$RUNNER_TEMP/zsh.err"
+          if [ -s "$RUNNER_TEMP/zsh.err" ]; then
+            cat "$RUNNER_TEMP/zsh.err" >&2
+            annotate "zsh stderr" < "$RUNNER_TEMP/zsh.err"
+            zsh -lic 'autoload -Uz compaudit; compaudit' 2>&1 | annotate "compaudit" || true
+            exit 1
+          fi
+
+      - name: Tools resolve in the login shell
+        if: ${{ !cancelled() }}
+        run: |
+          zsh -lic 'for c in eza starship sheldon mise hx gitui gh uv; do
+            command -v "$c" >/dev/null || { echo "missing: $c" >&2; exit 1; }
+          done'
+
+      - name: Completions were generated
+        if: ${{ !cancelled() }}
+        run: |
+          zsh -lic 'test -s ~/.config/sheldon/completions/_mise && test -s ~/.config/sheldon/completions/_chezmoi'
+
+      - name: Linux desktop setup
+        if: ${{ !cancelled() && runner.os == 'Linux' }}
+        run: |
+          for c in docker wezterm; do
+            command -v "$c" >/dev/null || { echo "missing: $c" >&2; exit 1; }
+          done
+          test -x "$HOME/.local/bin/zed"
+          fc-list | grep -qi PlemolJP
+          getent passwd "$USER" | grep -q '/zsh$'
+          dpkg-query -W -f='${Status}' fcitx5-mozc | grep -q 'ok installed'
+          grep -qx 'run_im fcitx5' "$HOME/.xinputrc"
+
+  # Re-tries every cask in .github/cask-skip.txt and opens a pull request dropping the ones
+  # that download again. The pull request is merged by hand: GITHUB_TOKEN-created pull requests
+  # need their CI runs approved anyway.
+  cask-skip-canary:
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # A checksum mismatch, or any other download failure, means the skip is still needed.
+      # Upstreams have served the expected file once and a mismatching one on the next run,
+      # so a cask counts as fixed only after several fresh downloads in a row succeed.
+      - name: Re-try skipped casks
+        id: fetch
+        run: |
+          attempts=3
+          fixed=""
+          while IFS= read -r line; do
+            cask=$(printf '%s' "$line" | sed -e 's/#.*//' | xargs)
+            [ -n "$cask" ] || continue
+            ok=1
+            for _ in $(seq "$attempts"); do
+              # --force discards the cached download; brew must not read the loop's stdin.
+              if ! brew fetch --force --cask "$cask" < /dev/null; then
+                ok=0
+                break
+              fi
+            done
+            if [ "$ok" = 1 ]; then
+              fixed="$fixed $cask"
+            else
+              echo "::notice::$cask still fails to download; keeping the skip."
+            fi
+          done < .github/cask-skip.txt
+          echo "fixed=${fixed# }" >> "$GITHUB_OUTPUT"
+
+      - name: Open a pull request dropping fixed casks
+        if: steps.fetch.outputs.fixed != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIXED: ${{ steps.fetch.outputs.fixed }}
+        run: |
+          branch=ci/unskip-casks
+          # One open pull request is enough; the weekly schedule would otherwise pile them up.
+          if [ -n "$(gh pr list --state open --head "$branch" --json number --jq '.[].number')" ]; then
+            echo "An open pull request already tracks this."
+            exit 0
+          fi
+          # Drops each fixed cask's whole line, reason comment included.
+          for cask in $FIXED; do
+            awk -v c="$cask" '{ name = $0; sub(/#.*/, "", name); gsub(/[[:space:]]/, "", name); if (name != c) print }' \
+              .github/cask-skip.txt > "$RUNNER_TEMP/cask-skip.txt"
+            mv "$RUNNER_TEMP/cask-skip.txt" .github/cask-skip.txt
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "👷 ci: stop skipping casks that download again"
+          git push --force origin "$branch"
+          body=$(cat <<EOF
+          \`brew fetch --force --cask\` succeeded three times in a row for: ${FIXED}
+
+          This drops them from \`.github/cask-skip.txt\`. Approve the CI runs on this pull request,
+          then merge; the install workflow re-runs on main with these casks included.
+          EOF
+          )
+          gh pr create --base main --head "$branch" \
+            --title "👷 ci: stop skipping casks that download again" --body "$body"

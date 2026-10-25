@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Unpinned on purpose: local machines track the latest chezmoi, so CI should too.
+      # The installer writes to .local/bin relative to the working directory.
+      - name: Install chezmoi and shellcheck
+        run: |
+          cd "$HOME"
+          sh -c "$(curl -fsLS --retry 3 --max-time 60 get.chezmoi.io/lb)"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          if [ "$RUNNER_OS" = macOS ]; then brew install shellcheck; fi
+
+      # chezmoi keeps looking for its source in ~/.local/share/chezmoi after init.
+      - name: Place the checkout where chezmoi expects its source
+        run: |
+          mkdir -p ~/.local/share
+          cp -R "$GITHUB_WORKSPACE" ~/.local/share/chezmoi
+
+      - name: Initialise with a dummy identity
+        run: chezmoi init --no-tty --promptString name=ci,email=ci@example.com
+
+      - name: Render every target
+        run: |
+          mkdir -p "$RUNNER_TEMP/home"
+          chezmoi apply --dry-run --verbose --exclude=scripts --destination "$RUNNER_TEMP/home"
+
+      # Scripts are linted after rendering, so each OS checks the branch it actually runs.
+      - name: Lint rendered scripts
+        run: |
+          mkdir -p "$RUNNER_TEMP/scripts"
+          for f in home/.chezmoiscripts/*.tmpl; do
+            out="$RUNNER_TEMP/scripts/$(basename "$f" .tmpl)"
+            chezmoi execute-template < "$f" > "$out"
+            if [ -s "$out" ]; then shellcheck "$out"; fi
+          done

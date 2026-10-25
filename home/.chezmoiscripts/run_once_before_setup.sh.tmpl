@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$PATH"
+
+{{ template "download.sh" . }}
+{{ if eq .chezmoi.os "linux" -}}
+{{ template "apt.sh" . }}
+apt_update
+apt_install build-essential zsh
+sudo chsh -s /usr/bin/zsh "$USER"
+{{ else if eq .chezmoi.os "darwin" -}}
+# macOS: install Homebrew if not present
+if ! command -v brew >/dev/null 2>&1; then
+    echo "Installing Homebrew..."
+    export NONINTERACTIVE=1
+    run_installer https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh /bin/bash
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{{ end -}}
+
+# mise installs every other tool, sheldon included, so it must come from outside mise.
+if ! command -v mise >/dev/null 2>&1; then
+    echo "Installing mise..."
+    run_installer https://mise.run sh
+fi

@@ -1,0 +1,33 @@
+[tools]
+1password = "latest"
+bun = "1.4.4"
+claude = { version = "2.1.310", bin = "claude", platforms = """
+[linux-arm64]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/linux-arm64/claude"
+
+[linux-x64]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/linux-x64/claude"
+
+[macos-arm64]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/darwin-arm64/claude"
+
+[macos-x64]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/darwin-x64/claude"
+""", version_list_url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable" }
+codex = "latest"
+eza = "latest"
+fastfetch = "latest"
+github-cli = "latest"
+gitui = "latest"
+helix = "latest"
+node = "latest"
+"npm:oxlint" = "latest"
+"npm:oxfmt" = "latest"
+ollama = "latest"
+pixi = "latest"
+pnpm = "latest"
+rust = "latest"
+# The macOS build links Homebrew's openssl@3 at run time, so the Brewfile must keep it.
+sheldon = "latest"
+starship = "latest"
+uv = "latest"

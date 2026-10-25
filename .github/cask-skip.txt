@@ -1,0 +1,5 @@
+# Casks the install workflow skips because they are broken upstream: one cask per line,
+# with the reason after `#` on the same line so the canary removes both together.
+# The cask-skip-canary job opens a pull request dropping a line once that cask downloads again.
+
+gcc-arm-embedded # upstream intermittently serves a file that fails the checksum from the same URL
