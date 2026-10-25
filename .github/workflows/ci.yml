@@ -14,6 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-26.04, macos-26]
+        profile: [minimal, full]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -37,7 +38,38 @@ jobs:
           cp -R "$GITHUB_WORKSPACE" ~/.local/share/chezmoi
 
       - name: Initialise with a dummy identity
-        run: chezmoi init --no-tty --promptString name=ci,email=ci@example.com
+        run: |
+          chezmoi init --no-tty --promptString name=ci,email=ci@example.com \
+            --promptChoice "profile=${{ matrix.profile }}"
+
+      - name: An unknown profile is rejected
+        run: |
+          if chezmoi init --no-tty --config "$RUNNER_TEMP/bad.toml" \
+               --promptString name=ci,email=ci@example.com --promptChoice profile=huge; then
+            echo "profile=huge was accepted" >&2
+            exit 1
+          fi
+
+      # Only macOS manages a Brewfile; the heavy entries must follow the profile exactly.
+      - name: The profile decides the heavy Homebrew packages
+        if: runner.os == 'macOS'
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          brewfile=$(chezmoi cat ~/.Brewfile)
+          grep -q '^cask "firefox"' <<< "$brewfile" || { echo "firefox missing from every profile" >&2; exit 1; }
+          status=0
+          for entry in 'cask "kicad"' 'cask "autodesk-fusion"' 'cask "bambu-studio"' \
+                       'cask "gcc-arm-embedded"' 'cask "raspberry-pi-imager"' \
+                       'brew "espressif/eim/eim"' 'brew "cmake"' 'brew "ninja"'; do
+            if grep -qF "$entry" <<< "$brewfile"; then present=yes; else present=no; fi
+            if { [ "$PROFILE" = full ] && [ "$present" = no ]; } ||
+               { [ "$PROFILE" = minimal ] && [ "$present" = yes ]; }; then
+              echo "$PROFILE profile: $entry present=$present" >&2
+              status=1
+            fi
+          done
+          exit "$status"
 
       - name: Render every target
         run: |

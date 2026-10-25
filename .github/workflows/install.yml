@@ -10,7 +10,7 @@ on:
       - "home/.chezmoiscripts/**"
       - "home/.chezmoi.toml.tmpl"
       - "home/.chezmoiignore"
-      - "home/dot_Brewfile"
+      - "home/dot_Brewfile.tmpl"
       - "home/dot_config/environment.d/**"
       - "home/dot_config/mise/**"
       - "home/dot_config/sheldon/**"
@@ -33,6 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-26.04, macos-26]
+        profile: [minimal, full]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     env:
@@ -98,7 +99,8 @@ jobs:
         run: |
           cd "$HOME"
           sh -c "$(curl -fsLS --retry 3 --max-time 60 get.chezmoi.io/lb)" -- \
-            init --apply --no-tty --promptString name=ci,email=ci@example.com
+            init --apply --no-tty --promptString name=ci,email=ci@example.com \
+            --promptChoice "profile=${{ matrix.profile }}"
 
       # Every check below runs even if an earlier one failed, so one run reports them all.
       - name: Every target matches the source
@@ -158,6 +160,44 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           zsh -lic 'test -s ~/.config/sheldon/completions/_mise && test -s ~/.config/sheldon/completions/_chezmoi'
+
+      # Casks skipped as broken upstream are left out of the expectation.
+      - name: The profile decides the heavy Homebrew packages
+        if: ${{ !cancelled() && runner.os == 'macOS' }}
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          status=0
+          for cask in kicad autodesk-fusion bambu-studio gcc-arm-embedded raspberry-pi-imager; do
+            case " $HOMEBREW_BUNDLE_CASK_SKIP " in *" $cask "*) continue ;; esac
+            if brew list --cask "$cask" >/dev/null 2>&1; then installed=yes; else installed=no; fi
+            if { [ "$PROFILE" = full ] && [ "$installed" = no ]; } ||
+               { [ "$PROFILE" = minimal ] && [ "$installed" = yes ]; }; then
+              echo "$PROFILE profile: cask $cask installed=$installed" >&2
+              status=1
+            fi
+          done
+          exit "$status"
+
+      - name: Dock and Finder are arranged
+        if: ${{ !cancelled() && runner.os == 'macOS' }}
+        run: |
+          expected=$(printf '%s\n' /System/Applications/Apps.app /Applications/Firefox.app \
+            /Applications/Thunderbird.app /Applications/WezTerm.app /Applications/Zed.app \
+            /Applications/1Password.app)
+          actual=$(defaults read com.apple.dock persistent-apps |
+            sed -nE 's#.*"_CFURLString" = "file://(.*)/";#\1#p')
+          if [ "$actual" != "$expected" ]; then
+            echo "Dock apps differ:" >&2
+            diff <(echo "$expected") <(echo "$actual") >&2 || true
+            exit 1
+          fi
+          plist="$HOME/Library/Preferences/com.apple.finder.plist"
+          arrange() { /usr/libexec/PlistBuddy -c "Print :$1:IconViewSettings:arrangeBy" "$plist"; }
+          test "$(arrange DesktopViewSettings)" = grid
+          test "$(arrange FK_StandardViewSettings)" = name
+          test "$(arrange StandardViewSettings)" = name
 
       - name: Linux desktop setup
         if: ${{ !cancelled() && runner.os == 'Linux' }}
