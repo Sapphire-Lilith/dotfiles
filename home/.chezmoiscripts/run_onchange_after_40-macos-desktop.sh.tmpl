@@ -1,0 +1,49 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -euo pipefail
+
+# Dock: exactly these apps, in this order. Apps not installed yet are skipped, so a later
+# apply after installing them fills the gap once this script changes.
+dock_apps=(
+    /System/Applications/Apps.app
+    /Applications/Firefox.app
+    /Applications/Thunderbird.app
+    /Applications/WezTerm.app
+    /Applications/Zed.app
+    /Applications/1Password.app
+)
+
+defaults write com.apple.dock persistent-apps -array
+for app in "${dock_apps[@]}"; do
+    if [ ! -d "$app" ]; then
+        echo "Dock: skipping $app (not installed)" >&2
+        continue
+    fi
+    defaults write com.apple.dock persistent-apps -array-add \
+        "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>file://${app}/</string><key>_CFURLStringType</key><integer>15</integer></dict></dict></dict>"
+done
+defaults write com.apple.dock persistent-others -array
+defaults write com.apple.dock show-recents -bool false
+
+# Desktop icons snap to the grid; Finder icon views keep themselves sorted by name.
+# Folders that already carry their own view settings in .DS_Store keep those.
+finder_plist="$HOME/Library/Preferences/com.apple.finder.plist"
+# A fresh account may lack the parent dictionaries, and PlistBuddy cannot add a key under a
+# missing parent, so each level is created first (an existing one makes Add fail harmlessly).
+set_arrange_by() {
+    local key=$1 value=$2 parent="" part
+    IFS=: read -r -a parts <<< "${key%:*}"
+    for part in "${parts[@]}"; do
+        parent="${parent}:${part}"
+        /usr/libexec/PlistBuddy -c "Add ${parent} dict" "$finder_plist" >/dev/null 2>&1 || true
+    done
+    /usr/libexec/PlistBuddy -c "Set :${key} ${value}" "$finder_plist" 2>/dev/null ||
+        /usr/libexec/PlistBuddy -c "Add :${key} string ${value}" "$finder_plist"
+}
+set_arrange_by DesktopViewSettings:IconViewSettings:arrangeBy grid
+set_arrange_by FK_StandardViewSettings:IconViewSettings:arrangeBy name
+set_arrange_by StandardViewSettings:IconViewSettings:arrangeBy name
+
+# Both read their preferences only at launch.
+killall Dock Finder 2>/dev/null || true
+{{ end -}}
