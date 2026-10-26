@@ -20,7 +20,9 @@ fi
 {{ end -}}
 
 # mise installs every other tool, sheldon included, so it must come from outside mise.
-if ! command -v mise >/dev/null 2>&1; then
+# Check the path .zshenv activates rather than PATH: a mise found elsewhere (e.g. one
+# Homebrew put in a VM image) is not on PATH yet when .zshenv runs.
+if [ ! -x "$HOME/.local/bin/mise" ]; then
     echo "Installing mise..."
     run_installer https://mise.run sh
 fi
