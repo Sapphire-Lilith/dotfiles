@@ -13,17 +13,50 @@ dock_apps=(
     /Applications/1Password.app
 )
 
-defaults write com.apple.dock persistent-apps -array
+installed_apps=()
 for app in "${dock_apps[@]}"; do
-    if [ ! -d "$app" ]; then
+    if [ -d "$app" ]; then
+        installed_apps+=("$app")
+    else
         echo "Dock: skipping $app (not installed)" >&2
-        continue
     fi
-    defaults write com.apple.dock persistent-apps -array-add \
-        "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>file://${app}/</string><key>_CFURLStringType</key><integer>15</integer></dict></dict></dict>"
 done
-defaults write com.apple.dock persistent-others -array
-defaults write com.apple.dock show-recents -bool false
+
+write_dock() {
+    local app
+    defaults write com.apple.dock persistent-apps -array
+    for app in "${installed_apps[@]}"; do
+        defaults write com.apple.dock persistent-apps -array-add \
+            "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>file://${app}/</string><key>_CFURLStringType</key><integer>15</integer></dict></dict></dict>"
+    done
+    defaults write com.apple.dock persistent-others -array
+    defaults write com.apple.dock show-recents -bool false
+}
+
+dock_matches() {
+    local actual expected
+    actual=$(defaults read com.apple.dock persistent-apps 2>/dev/null |
+        sed -nE 's#.*"_CFURLString" = "file://(.*)/";#\1#p')
+    expected=$(printf '%s\n' "${installed_apps[@]}")
+    [ "$actual" = "$expected" ]
+}
+
+# A Dock that is busy (e.g. on a fresh account's first login) can write its own layout back
+# as it quits, so the result is read back after each restart and rewritten if it was lost.
+readonly DOCK_ATTEMPTS=3
+for attempt in $(seq "$DOCK_ATTEMPTS"); do
+    write_dock
+    killall Dock 2>/dev/null || true
+    sleep 3
+    if dock_matches; then
+        break
+    fi
+    if [ "$attempt" = "$DOCK_ATTEMPTS" ]; then
+        echo "Dock: layout did not stick after $DOCK_ATTEMPTS attempts" >&2
+        exit 1
+    fi
+    echo "Dock: layout was overwritten, retrying (attempt $attempt of $DOCK_ATTEMPTS)" >&2
+done
 
 # Desktop icons snap to the grid; Finder icon views keep themselves sorted by name.
 # Folders that already carry their own view settings in .DS_Store keep those.
@@ -44,6 +77,6 @@ set_arrange_by DesktopViewSettings:IconViewSettings:arrangeBy grid
 set_arrange_by FK_StandardViewSettings:IconViewSettings:arrangeBy name
 set_arrange_by StandardViewSettings:IconViewSettings:arrangeBy name
 
-# Both read their preferences only at launch.
-killall Dock Finder 2>/dev/null || true
+# Finder reads its preferences only at launch.
+killall Finder 2>/dev/null || true
 {{ end -}}
