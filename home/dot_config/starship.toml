@@ -47,15 +47,15 @@ truncation_symbol = "…/"
 # Here is how you can shorten some long paths by text replacement
 # similar to mapped_locations in Oh My Posh:
 [directory.substitutions]
-"Documents" = "\uf718 "
+"Documents" = "\U000f0219 "
 "Downloads" = "\uf019 "
 "Music" = "\uf001 "
 "Pictures" = "\uf03e "
 # Keep in mind that the order matters. For example:
-# "Important Documents" = " \uf718\uf12a "
+# "Important Documents" = " \U000f0219\uf12a "
 # will not be replaced, because "Documents" was already substituted before.
 # So either put "Important Documents" before "Documents" or use the substituted version:
-# "Important \uf718 " = " \uf718\uf12a "
+# "Important \U000f0219 " = " \U000f0219\uf12a "
 
 [c]
 symbol = "\ue61e "
@@ -112,7 +112,7 @@ style = "bg:#7fffbf fg:#000000"
 format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
 
 [nim]
-symbol = "\uf6a4 "
+symbol = "\U000f01a5 "
 style = "bg:#7fffbf fg:#000000"
 format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
 
@@ -124,4 +124,4 @@ format = '[[ $symbol ($version) ](bg:#7fffbf fg:#000000)]($style)'
 [time]
 style = "bg:#bfff7f fg:#000000"
 time_format = "%R" # Hour:Minute Format
-format = '\uf651[[ $time ](bg:#bfff7f fg:#000000)]($style)'
+format = "\U000f0954[[ $time ](bg:#bfff7f fg:#000000)]($style)"
